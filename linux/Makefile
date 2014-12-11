@@ -22,6 +22,10 @@ GAMEDB_SRC_DIR=$(COMMON_SRC_DIR)/gamedb
 PUBLIC_SRC_DIR=$(SOURCE_DIR)/public
 DBG_SRC_DIR=$(SOURCE_DIR)/dbg
 
+ifeq ($(PERFORCE), "")
+	PERFORCE=true
+endif
+MAKEENV:=PERFORCE=$(PERFORCE)
 
 BUILD_OBJ_DIR=$(BUILD_DIR)/obj
 
@@ -37,14 +41,20 @@ endif
 ifeq ($(OS),Darwin)
     OSXVER := $(shell sw_vers -productVersion)
 	DEVELOPER_DIR := $(shell /usr/bin/xcode-select -print-path)
-	ifeq (,$(findstring 10.7, $(OSXVER))) 
+	ifeq (,$(findstring "10.9", $(OSXVER)))
 		BUILDING_ON_LION := 0
-		COMPILER_BIN_DIR := $(DEVELOPER_DIR)/usr/bin
-		SDK_DIR := $(DEVELOPER_DIR)/SDKs
-	else
-		BUILDING_ON_LION := 1
-		COMPILER_BIN_DIR := $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/bin
+		COMPILER_BIN_DIR := /usr/bin
 		SDK_DIR := $(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs
+	else
+		ifeq (,$(findstring "10.7", $(OSXVER)))
+			BUILDING_ON_LION := 0
+			COMPILER_BIN_DIR := $(DEVELOPER_DIR)/usr/bin
+			SDK_DIR := $(DEVELOPER_DIR)/SDKs
+		else
+			BUILDING_ON_LION := 1
+			COMPILER_BIN_DIR := $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/bin
+			SDK_DIR := $(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs
+		endif
 	endif
 
 	#SDKROOT ?= $(SDK_DIR)/MacOSX10.6.sdk
@@ -118,12 +128,12 @@ AR=ar
 LIBEXT=a
 MAKE+= -j8
 
-MAKE_HL_LIB=$(MAKE) -f Makefile.hldll
-MAKE_DMC_LIB=$(MAKE) -f Makefile.dmcdll
-MAKE_RICOCHET_LIB=$(MAKE) -f Makefile.ricochetdll
-MAKE_HL_CDLL=$(MAKE) -f Makefile.hl_cdll
-MAKE_DMC_CDLL=$(MAKE) -f Makefile.dmc_cdll
-MAKE_RICOCHET_CDLL=$(MAKE) -f Makefile.ricochet_cdll
+MAKE_HL_LIB=$(MAKEENV) $(MAKE) -f Makefile.hldll
+MAKE_DMC_LIB=$(MAKEENV) $(MAKE) -f Makefile.dmcdll
+MAKE_RICOCHET_LIB=$(MAKEENV) $(MAKE) -f Makefile.ricochetdll
+MAKE_HL_CDLL=$(MAKEENV) $(MAKE) -f Makefile.hl_cdll
+MAKE_DMC_CDLL=$(MAKEENV) $(MAKE) -f Makefile.dmc_cdll
+MAKE_RICOCHET_CDLL=$(MAKEENV) $(MAKE) -f Makefile.ricochet_cdll
 
 #############################################################################
 # SETUP AND BUILD
@@ -144,6 +154,8 @@ TARGETS+= \
 build_dir:
 	-mkdir $(BUILD_DIR);
 	cd $(BUILD_DIR)
+	mkdir -p ../../game/mod/dlls/
+	mkdir -p ../../game/mod/cl_dlls/
 
 targets: $(TARGETS)
 
